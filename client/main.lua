@@ -143,7 +143,6 @@ Citizen.CreateThread(function()
     elseif lastOpen and IsControlPressed(0, Keys["BACKSPACE"]) and (GetGameTimer() - GUI.Time) > 150 then
 	  CloseToVehicle = false
       lastOpen = false
-      ESX.UI.Menu.CloseAll()
       if lastVehicle > 0 then
       	SetVehicleDoorShut(lastVehicle, 5, false)
 		local lastvehicleplatetext = GetVehicleNumberPlateText(lastVehicle)
@@ -348,7 +347,12 @@ AddEventHandler('esx_truck_inventory:getInventoryLoaded', function(inventory,wei
 					TriggerServerEvent('esx_truck_inventory:RemoveVehicleList', lastvehicleplatetext)
 				  end
 				)
-			end)
+			end,
+				function(data, menu)
+					menu.close()
+				end)
+		elseif data.current.type == 'cancel' then
+			menu.close()
 	  	else
 			ESX.UI.Menu.Open(
 			  'dialog', GetCurrentResourceName(), 'inventory_item_count_give',
@@ -381,7 +385,7 @@ AddEventHandler('esx_truck_inventory:getInventoryLoaded', function(inventory,wei
           --fin test
 
 
-			    if quantity > 0 and quantity <= tonumber(data.current.count) and vehFront > 0 then
+			if quantity > 0 and quantity <= tonumber(data.current.count) and vehFront > 0 then
             if not max then
                TriggerServerEvent('esx_truck_inventory:removeInventoryItem', GetVehicleNumberPlateText(vehFront), data.current.value, data.current.type, quantity)
 			   local typeVeh = GetVehicleClass(vehFront)
@@ -409,14 +413,18 @@ AddEventHandler('esx_truck_inventory:getInventoryLoaded', function(inventory,wei
 	            end
 			  end,
 			  function(data2, menu2)
-	            SetVehicleDoorShut(vehFrontBack, 5, false)
-			    ESX.UI.Menu.CloseAll()
-				local lastvehicleplatetext = GetVehicleNumberPlateText(vehFrontBack)
-				TriggerServerEvent('esx_truck_inventory:RemoveVehicleList', lastvehicleplatetext)
-			  end
-			)
-	  	end
-	  end)
+                        --SetVehicleDoorShut(vehFrontBack, 5, false)
+                        ESX.UI.Menu.CloseAll()
+                        local lastvehicleplatetext = GetVehicleNumberPlateText(vehFrontBack)
+                        TriggerServerEvent('esx_truck_inventory:RemoveVehicleList', lastvehicleplatetext)
+                    end
+                )
+            end
+        end,
+		function(data, menu)
+			menu.close()
+		end
+	)
 end)
 
 
