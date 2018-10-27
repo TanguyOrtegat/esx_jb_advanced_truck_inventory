@@ -86,27 +86,38 @@ RegisterServerEvent('esx_truck_inventory:removeInventoryItem')
 AddEventHandler('esx_truck_inventory:removeInventoryItem', function(plate, item, itemType, count)
   local _source = source
   local xPlayer  = ESX.GetPlayerFromId(_source)
-  MySQL.Async.execute( 'UPDATE `truck_inventory` SET `count`= `count` - @qty WHERE `plate` = @plate AND `item`= @item AND `itemt`= @itemt',
-    {
-      ['@plate'] = plate,
-      ['@qty'] = count,
-      ['@item'] = item,
-	  ['@itemt'] = itemType
-    })
-	if xPlayer ~= nil then
-		if itemType == 'item_standard' then
-			xPlayer.addInventoryItem(item, count)
-		end 
+  	MySQL.Async.fetchScalar('SELECT `count` FROM truck_inventory WHERE `plate` = @plate AND `item`= @item AND `itemt`= @itemt',
+	{
+		['@plate'] = plate,
+		['@item'] = item,
+		['@itemt'] = itemType
+	}, function(countincar)
+		if countincar >= count then
+			 MySQL.Async.execute( 'UPDATE `truck_inventory` SET `count`= `count` - @qty WHERE `plate` = @plate AND `item`= @item AND `itemt`= @itemt',
+			{
+			['@plate'] = plate,
+			['@qty'] = count,
+			['@item'] = item,
+			['@itemt'] = itemType
+			})
+			if xPlayer ~= nil then
+				if itemType == 'item_standard' then
+					xPlayer.addInventoryItem(item, count)
+				end 
 
-		if itemType == 'item_account' then
-			xPlayer.addAccountMoney(item, count)
+				if itemType == 'item_account' then
+					xPlayer.addAccountMoney(item, count)
+				end
+
+				if itemType == 'item_weapon' then
+					xPlayer.addWeapon(item, count)
+				end
+			end
+		else
+
 		end
 
-		if itemType == 'item_weapon' then
-			xPlayer.addWeapon(item, count)
-		end
-	end
-end)
+	end)
 
 
 RegisterServerEvent('esx_truck_inventory:addInventoryItem')
