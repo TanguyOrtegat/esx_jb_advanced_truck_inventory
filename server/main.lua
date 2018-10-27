@@ -113,11 +113,12 @@ AddEventHandler('esx_truck_inventory:removeInventoryItem', function(plate, item,
 					xPlayer.addWeapon(item, count)
 				end
 			end
-		else
 
 		end
 
 	end)
+		
+end)
 
 
 RegisterServerEvent('esx_truck_inventory:addInventoryItem')
