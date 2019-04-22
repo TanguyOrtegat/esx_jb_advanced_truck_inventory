@@ -86,38 +86,39 @@ RegisterServerEvent('esx_truck_inventory:removeInventoryItem')
 AddEventHandler('esx_truck_inventory:removeInventoryItem', function(plate, item, itemType, count)
   local _source = source
   local xPlayer  = ESX.GetPlayerFromId(_source)
-  	MySQL.Async.fetchScalar('SELECT `count` FROM truck_inventory WHERE `plate` = @plate AND `item`= @item AND `itemt`= @itemt',
-	{
-		['@plate'] = plate,
-		['@item'] = item,
-		['@itemt'] = itemType
-	}, function(countincar)
-		if countincar >= count then
-			 MySQL.Async.execute( 'UPDATE `truck_inventory` SET `count`= `count` - @qty WHERE `plate` = @plate AND `item`= @item AND `itemt`= @itemt',
-			{
+	if plate ~= " " or plate ~= nil or plate ~= "" then
+	  	MySQL.Async.fetchScalar('SELECT `count` FROM truck_inventory WHERE `plate` = @plate AND `item`= @item AND `itemt`= @itemt',
+		{
 			['@plate'] = plate,
-			['@qty'] = count,
 			['@item'] = item,
 			['@itemt'] = itemType
-			})
-			if xPlayer ~= nil then
-				if itemType == 'item_standard' then
-					xPlayer.addInventoryItem(item, count)
-				end 
+		}, function(countincar)
+			if countincar >= count then
+				 MySQL.Async.execute( 'UPDATE `truck_inventory` SET `count`= `count` - @qty WHERE `plate` = @plate AND `item`= @item AND `itemt`= @itemt',
+				{
+				['@plate'] = plate,
+				['@qty'] = count,
+				['@item'] = item,
+				['@itemt'] = itemType
+				})
+				if xPlayer ~= nil then
+					if itemType == 'item_standard' then
+						xPlayer.addInventoryItem(item, count)
+					end 
 
-				if itemType == 'item_account' then
-					xPlayer.addAccountMoney(item, count)
+					if itemType == 'item_account' then
+						xPlayer.addAccountMoney(item, count)
+					end
+
+					if itemType == 'item_weapon' then
+						xPlayer.addWeapon(item, count)
+					end
 				end
 
-				if itemType == 'item_weapon' then
-					xPlayer.addWeapon(item, count)
-				end
 			end
 
-		end
-
-	end)
-		
+		end)
+	end	
 end)
 
 
@@ -126,32 +127,34 @@ AddEventHandler('esx_truck_inventory:addInventoryItem', function(type, model, pl
   local _source = source
   local xPlayer  = ESX.GetPlayerFromId(_source)
   
-  MySQL.Async.execute( 'INSERT INTO truck_inventory (item,count,plate,name,itemt,owned) VALUES (@item,@qty,@plate,@name,@itemt,@owned) ON DUPLICATE KEY UPDATE count=count+ @qty',
-    {
-      ['@plate'] = plate,
-      ['@qty'] = qtty,
-      ['@item'] = item,
-      ['@name'] = name,
-	  ['@itemt'] = itemType,
-      ['@owned'] = ownedV,
-    })
-	
-	if xPlayer ~= nil then
-		if itemType == 'item_standard' then
-			local playerItemCount = xPlayer.getInventoryItem(item).count
-			if playerItemCount >= qtty then
-			   xPlayer.removeInventoryItem(item, qtty)
-			else
-			  TriggerClientEvent('esx:showNotification', _source, 'quantité invalide')
+	if plate ~= " " or plate ~= nil or plate ~= "" then
+	  	MySQL.Async.execute( 'INSERT INTO truck_inventory (item,count,plate,name,itemt,owned) VALUES (@item,@qty,@plate,@name,@itemt,@owned) ON DUPLICATE KEY UPDATE count=count+ @qty',
+	    {
+		      ['@plate'] = plate,
+		      ['@qty'] = qtty,
+		      ['@item'] = item,
+		      ['@name'] = name,
+			  ['@itemt'] = itemType,
+		      ['@owned'] = ownedV,
+	    })
+		
+		if xPlayer ~= nil then
+			if itemType == 'item_standard' then
+				local playerItemCount = xPlayer.getInventoryItem(item).count
+				if playerItemCount >= qtty then
+				   xPlayer.removeInventoryItem(item, qtty)
+				else
+				  TriggerClientEvent('esx:showNotification', _source, 'quantité invalide')
+				end
 			end
-		end
 
-		if itemType == 'item_account' then
-			xPlayer.removeAccountMoney(item, qtty)
-		end
+			if itemType == 'item_account' then
+				xPlayer.removeAccountMoney(item, qtty)
+			end
 
-		if itemType == 'item_weapon' then
-			xPlayer.removeWeapon(item, qtty)
+			if itemType == 'item_weapon' then
+				xPlayer.removeWeapon(item, qtty)
+			end
 		end
 	end
 end)
@@ -178,14 +181,16 @@ end)
 RegisterServerEvent('esx_truck_inventory:AddVehicleList')
 AddEventHandler('esx_truck_inventory:AddVehicleList', function(plate)
 	local plateisfound = false
-	for _,v in pairs(VehicleList) do
-		if(plate == v.vehicleplate) then
-			plateisfound = true
-			break
-		end		
-	end
-	if not plateisfound then
-		table.insert(VehicleList, {vehicleplate = plate})
+	if plate ~= " " or plate ~= nil or plate ~= "" then
+		for _,v in pairs(VehicleList) do
+			if(plate == v.vehicleplate) then
+				plateisfound = true
+				break
+			end		
+		end
+		if not plateisfound then
+			table.insert(VehicleList, {vehicleplate = plate})
+		end
 	end
 end)
 
