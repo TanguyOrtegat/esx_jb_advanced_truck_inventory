@@ -28,7 +28,7 @@ AddEventHandler('esx_truck_inventory:getOwnedVehicule', function()
 end)
 
 AddEventHandler('onMySQLReady', function ()
-	MySQL.Async.execute( 'DELETE FROM `truck_inventory` WHERE `owned` = 0 OR `count` = 0', {})
+	MySQL.Async.execute( 'DELETE FROM `truck_inventory` WHERE `count` = 0', {})
 end)
 
 
