@@ -27,32 +27,6 @@ AddEventHandler('esx_truck_inventory:getOwnedVehicule', function()
         end)
 end)
 
-AddEventHandler('onMySQLReady', function()
-    MySQL.Async.execute('DELETE FROM `truck_inventory` WHERE `count` = 0', {})
-end)
-
-
-
-function getInventoryWeight(inventory)
-    local weight = 0
-    local itemWeight = 0
-    
-    if inventory ~= nil then
-        for i = 1, #inventory, 1 do
-            if inventory[i] ~= nil then
-                itemWeight = Config.DefaultWeight
-                if arrayWeight[inventory[i].name] ~= nil then
-                    itemWeight = arrayWeight[inventory[i].name]
-                end
-                weight = weight + (itemWeight * inventory[i].count)
-            end
-        end
-    end
-    return weight
-end
-
-
-
 RegisterServerEvent('esx_truck_inventory:getInventory')
 AddEventHandler('esx_truck_inventory:getInventory', function(plate)
     local inventory_ = {}
@@ -80,7 +54,6 @@ AddEventHandler('esx_truck_inventory:getInventory', function(plate)
             TriggerClientEvent('esx_truck_inventory:getInventoryLoaded', xPlayer.source, inventory_, weight)
         end)
 end)
-
 
 RegisterServerEvent('esx_truck_inventory:removeInventoryItem')
 AddEventHandler('esx_truck_inventory:removeInventoryItem', function(plate, item, itemType, count)
@@ -121,7 +94,6 @@ AddEventHandler('esx_truck_inventory:removeInventoryItem', function(plate, item,
     end
 end)
 
-
 RegisterServerEvent('esx_truck_inventory:addInventoryItem')
 AddEventHandler('esx_truck_inventory:addInventoryItem', function(type, model, plate, item, qtty, name, itemType, ownedV)
     local _source = source
@@ -133,21 +105,29 @@ AddEventHandler('esx_truck_inventory:addInventoryItem', function(type, model, pl
             if itemType == 'item_standard' then
                 local playerItemCount = xPlayer.getInventoryItem(item).count
                 if playerItemCount >= qtty then
-					xPlayer.removeInventoryItem(item, qtty)
-					putInTrunk(plate, qtty, item, name, itemType, ownedV)
+                    xPlayer.removeInventoryItem(item, qtty)
+                    putInTrunk(plate, qtty, item, name, itemType, ownedV)
                 else
                     TriggerClientEvent('esx:showNotification', _source, 'quantité invalide')
                 end
             end
             
             if itemType == 'item_account' then
-				xPlayer.removeAccountMoney(item, qtty)
-				putInTrunk(plate, qtty, item, name, itemType, ownedV)
+                local playerAccountMoney = xPlayer.getAccount(item).money
+                if playerAccountMoney >= qtty then
+                    xPlayer.removeAccountMoney(item, qtty)
+                    putInTrunk(plate, qtty, item, name, itemType, ownedV)
+                end
             end
             
             if itemType == 'item_weapon' then
-				xPlayer.removeWeapon(item, qtty)
-				putInTrunk(plate, qtty, item, name, itemType, ownedV)
+                currentLoadout = xPlayer.getLoadout()
+                for i = 1, #currentLoadout, 1 do
+                    if currentLoadout[i].name == item then
+                        xPlayer.removeWeapon(item, qtty)
+                        putInTrunk(plate, qtty, item, name, itemType, ownedV)
+                    end
+                end
             end
         end
     end
@@ -170,7 +150,6 @@ ESX.RegisterServerCallback('esx_truck:checkvehicle', function(source, cb, vehicl
     end
     cb(isFound)
 end)
-
 
 RegisterServerEvent('esx_truck_inventory:AddVehicleList')
 AddEventHandler('esx_truck_inventory:AddVehicleList', function(plate)
@@ -200,6 +179,28 @@ AddEventHandler('esx_truck_inventory:RemoveVehicleList', function(plate)
     end
 end)
 
+AddEventHandler('onMySQLReady', function()
+    MySQL.Async.execute('DELETE FROM `truck_inventory` WHERE `count` = 0', {})
+end)
+
+function getInventoryWeight(inventory)
+    local weight = 0
+    local itemWeight = 0
+    
+    if inventory ~= nil then
+        for i = 1, #inventory, 1 do
+            if inventory[i] ~= nil then
+                itemWeight = Config.DefaultWeight
+                if arrayWeight[inventory[i].name] ~= nil then
+                    itemWeight = arrayWeight[inventory[i].name]
+                end
+                weight = weight + (itemWeight * inventory[i].count)
+            end
+        end
+    end
+    return weight
+end
+
 function putInTrunk(plate, qtty, item, name, itemType, ownedV)
     MySQL.Async.execute('INSERT INTO truck_inventory (item,count,plate,name,itemt,owned) VALUES (@item,@qty,@plate,@name,@itemt,@owned) ON DUPLICATE KEY UPDATE count=count+ @qty',
         {
@@ -209,7 +210,7 @@ function putInTrunk(plate, qtty, item, name, itemType, ownedV)
             ['@name'] = name,
             ['@itemt'] = itemType,
             ['@owned'] = ownedV,
-    })
+        })
 end
 
 function dump(o)
